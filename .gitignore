@@ -1,6 +1,5 @@
 .env/
 *.log
-ansible.cfg
 
 .sshcontrol/
 .facts/
