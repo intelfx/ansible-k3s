@@ -27,7 +27,7 @@
       notify: k3s_reinit
 
 - name: Install k3s manifests
-  when: inventory_hostname == groups["k3s_server"][0]
+  when: k3s.extras and inventory_hostname == groups["k3s_server"][0]
   vars:
     _k3s_manifests_dir: /var/lib/rancher/k3s/server/manifests
   block:
@@ -35,15 +35,12 @@
       file:
         path: '{{ _k3s_manifests_dir }}'
         state: directory
-      when: k3s.extras
 
     - name: Install kube-vip manifests
       include_tasks: install_kube_vip.yml
-      when: k3s.extras
 
     - name: Install MetalLB manifests
       include_tasks: install_metallb.yml
-      when: k3s.extras
 
 - name: Commit reinit flag
   meta: flush_handlers
