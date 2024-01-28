@@ -8,6 +8,9 @@ _k3s_log_destination: '{{ lookup("ansible.builtin.env", "PWD") }}'
 _k3s_conf_destination: '{{ lookup("ansible.builtin.env", "PWD") }}'
 
 _k3s_init_token: '{{ k3s.token }}'
+# These two are set as facts as part of the k3s_server role
+_k3s_node_token: None
+_k3s_agent_token: None
 
 _k3s_int_iface: '{{ k3s.int_iface }}'
 _k3s_ext_iface: '{{ k3s.ext_iface | default(k3s.int_iface) }}'
@@ -57,8 +60,11 @@ _k3s_args_server: |-
   {% endif %}
   {{ k3s.extra_args_server }}
 
+# we are not passing the apiserver (V)IP here -- k3s load-balances agent->server connections internally
 _k3s_args_agent: |-
   {{ _k3s_args_all }}
+  --server https://{{ hostvars[groups["k3s_server"][0]]._k3s_int_node_ip | ansible.utils.ipwrap }}:6443
+  --token {{ _k3s_agent_token }}
   {{ k3s.extra_args_agent }}
 
 # TODO: use full (secure) token for 2nd and later masters
