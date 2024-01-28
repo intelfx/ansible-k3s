@@ -23,7 +23,6 @@
           {% endif %}
         dest: "{{ _systemd_dir }}/{{ item }}.env"
         mode: '0600'
-      notify: systemd_reload
       loop: '{{ _k3s_units_env.keys() }}'
       notify: k3s_reinit
 
