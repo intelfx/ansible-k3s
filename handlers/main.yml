@@ -1,0 +1,10 @@
+---
+- name: sysctl apply
+  ansible.posix.sysctl:
+    reload: true
+  listen: sysctl_reload
+
+- name: systemctl reload
+  ansible.builtin.systemd_service:
+    daemon_reload: true
+  listen: systemd_reload
