@@ -229,10 +229,26 @@
 - name: Download k3s configuration
   when: not ansible_check_mode and inventory_hostname == groups["k3s_server"][0]
   block:
+    - name: Copy kubeconfig (user)
+      copy:
+        remote_src: true
+        src: "{{ _k3s_conf_dir }}/k3s.yaml.tmp"
+        dest: "{{ _k3s_conf_dir }}/k3s.yaml.tmp.user"
+      changed_when: false
+
+    - name: Adjust kubeconfig (user) endpoint URL to {{ endpoint_url }}
+      vars:
+        endpoint_url: "https://{{ _k3s_apiserver_name | ansible.utils.ipwrap }}:6443"
+      replace:
+        path: "{{ _k3s_conf_dir }}/k3s.yaml.tmp.user"
+        regexp: "\\b(server): [^\\n]+$"
+        replace: "\\1: {{ endpoint_url }}"
+      changed_when: false
+
     - name: Fetch k3s configuration
       vars:
         src: '{{ item.src }}'
-        dest: '{{ _k3s_conf_destination }}/{{ item.dest | default(item.src | basename) }}@{{ inventory_hostname }}'
+        dest: '{{ _k3s_conf_destination }}/{{ item.dest | default(item.src | basename) }}'
       fetch:
         src: "{{ src }}"
         dest: "{{ dest }}"
@@ -240,7 +256,7 @@
       loop:
         - { src: "{{ _k3s_state_dir }}/server/node-token" }
         - { src: "{{ _k3s_state_dir }}/server/agent-token" }
-        - { src: "{{ _k3s_conf_dir }}/k3s.yaml.tmp", dest: kubeconfig }
+        - { src: "{{ _k3s_conf_dir }}/k3s.yaml.tmp.user", dest: kubeconfig }
 
 - name: Find k3s tool
   command:
