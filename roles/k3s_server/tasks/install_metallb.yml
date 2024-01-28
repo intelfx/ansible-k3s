@@ -1,12 +1,14 @@
 ---
-- name: install {{ _k3s_manifests_dir }}/metallb-{{ metal_lb_type }}
+- name: fetch {{ _k3s_manifests_dir }}/metallb-{{ metal_lb_type }}
   ansible.builtin.get_url:
     url: 'https://raw.githubusercontent.com/metallb/metallb/{{ metal_lb_controller_tag_version }}/config/manifests/metallb-{{ metal_lb_type }}.yaml'  # noqa yaml[line-length]
-    dest: '{{ _k3s_manifests_dir }}/metallb-crds.yaml'
+    dest: '{{ _k3s_manifests_dir }}/metallb-crds.yaml.tmp'
+  # we do not care about this status
+  changed_when: false
 
 - name: patch {{ _k3s_manifests_dir }}/metallb-{{ metal_lb_type }}
   ansible.builtin.replace:
-    path: '{{ _k3s_manifests_dir }}/metallb-crds.yaml'
+    path: '{{ _k3s_manifests_dir }}/metallb-crds.yaml.tmp'
     regexp: '{{ item.change | ansible.builtin.regex_escape }}'
     replace: '{{ item.to }}'
   with_items:
@@ -14,3 +16,19 @@
       to: 'metallb/speaker:{{ metal_lb_speaker_tag_version }}'
   loop_control:
     label: '{{ item.change }} => {{ item.to }}'
+  # we do not care about this status
+  changed_when: false
+
+- name: install {{ _k3s_manifests_dir }}/metallb-{{ metal_lb_type }}
+  copy:
+    remote_src: true
+    src: '{{ _k3s_manifests_dir }}/metallb-crds.yaml.tmp'
+    dest: '{{ _k3s_manifests_dir }}/metallb-crds.yaml'
+
+- name: remove temporary files
+  file:
+    path: '{{ _k3s_manifests_dir }}/metallb-crds.yaml.tmp'
+    state: absent
+  # we do not care about these
+  failed_when: false
+  changed_when: false
