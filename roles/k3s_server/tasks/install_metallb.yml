@@ -24,6 +24,7 @@
     remote_src: true
     src: '{{ _k3s_manifests_dir }}/metallb-crds.yaml.tmp'
     dest: '{{ _k3s_manifests_dir }}/metallb-crds.yaml'
+  notify: k3s_reinit
 
 - name: remove temporary files
   file:

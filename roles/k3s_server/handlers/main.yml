@@ -1,0 +1,5 @@
+---
+- name: Mark k3s for reinitialization
+  set_fact:
+    _k3s_reinit: true
+  listen: k3s_reinit
