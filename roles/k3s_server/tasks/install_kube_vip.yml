@@ -1,0 +1,10 @@
+---
+- name: install {{ manifests_dir }}/vip-rbac.yaml
+  ansible.builtin.get_url:
+    url: 'https://raw.githubusercontent.com/kube-vip/kube-vip/{{ kube_vip_tag_version }}/docs/manifests/rbac.yaml'
+    dest: '{{ manifests_dir }}/vip-rbac.yaml'
+
+- name: install {{ manifests_dir }}/vip.yaml
+  template:
+    src: 'vip.yaml.j2'
+    dest: '{{ manifests_dir }}/vip.yaml'

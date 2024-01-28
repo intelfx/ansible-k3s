@@ -1,0 +1,16 @@
+---
+- name: install {{ _k3s_manifests_dir }}/metallb-{{ metal_lb_type }}
+  ansible.builtin.get_url:
+    url: 'https://raw.githubusercontent.com/metallb/metallb/{{ metal_lb_controller_tag_version }}/config/manifests/metallb-{{ metal_lb_type }}.yaml'  # noqa yaml[line-length]
+    dest: '{{ _k3s_manifests_dir }}/metallb-crds.yaml'
+
+- name: patch {{ _k3s_manifests_dir }}/metallb-{{ metal_lb_type }}
+  ansible.builtin.replace:
+    path: '{{ _k3s_manifests_dir }}/metallb-crds.yaml'
+    regexp: '{{ item.change | ansible.builtin.regex_escape }}'
+    replace: '{{ item.to }}'
+  with_items:
+    - change: 'metallb/speaker:{{ metal_lb_controller_tag_version }}'
+      to: 'metallb/speaker:{{ metal_lb_speaker_tag_version }}'
+  loop_control:
+    label: '{{ item.change }} => {{ item.to }}'

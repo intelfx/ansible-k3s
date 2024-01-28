@@ -1,0 +1,47 @@
+- vars:
+    gotpl: |-
+      {{ '
+      {{ range $node := .items }}
+      {{ range $cond := $node.status.conditions }}
+      {{ if and (eq $cond.type "Ready") (eq $cond.status "True") }}
+      {{ printf "%s\n" $node.metadata.name }}
+      {{ break }}
+      {{ end }}
+      {{ end }}
+      {{ end }}
+      ' }}
+  block:
+    - name: Wait for the master to respond
+      command:
+        argv: [
+          "k3s",
+          "kubectl",
+          "cluster-info",
+        ]
+      changed_when: false
+      register: this
+      until: this.rc == 0
+      failed_when: this.rc != 0
+      delay: 5
+      retries: 12
+
+    - name: Wait until all servers have joined
+      command:
+        argv: [
+          "k3s",
+          "kubectl",
+          "get",
+          "nodes",
+          "-l=node-role.kubernetes.io/master=true",
+          "-o=go-template={{ gotpl.splitlines() | join('') }}",
+        ]
+      changed_when: false
+      register: this
+      until: this.rc != 0 or (this.stdout_lines | length) == (groups["k3s_server"] | length)
+      failed_when: this.rc != 0 or (this.stdout_lines | length) != (groups["k3s_server"] | length)
+      delay: 5
+      retries: 12
+    - debug:
+        msg: '{{ this }}'
+    - debug:
+        msg: '{{ this.stdout_lines }}'
