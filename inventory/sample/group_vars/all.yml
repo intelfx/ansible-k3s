@@ -11,6 +11,8 @@ k3s:
     packages:
       - k3s
 
+  context_name: "k3s-nexus"
+
   # k3s_token is required  masters can talk together securely
   # this token should be alpha numeric only
   token: "kBiUgVLbFZ6Nec62xrV2wGYQgel5EYkMSmIDvARubOyTICibxFm6PHI71RiTn0rF"

@@ -7,6 +7,8 @@ _k3s_state_dir: /var/lib/rancher/k3s
 _k3s_log_destination: '{{ lookup("ansible.builtin.env", "PWD") }}'
 _k3s_conf_destination: '{{ lookup("ansible.builtin.env", "PWD") }}'
 
+_k3s_cfg_context_name: '{{ k3s.context_name }}'
+
 _k3s_init_token: '{{ k3s.token }}'
 # These two are set as facts as part of the k3s_server role
 _k3s_node_token: None

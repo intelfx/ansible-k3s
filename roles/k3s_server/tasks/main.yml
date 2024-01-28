@@ -199,13 +199,11 @@
         dest: "{{ _k3s_conf_dir }}/k3s.yaml.tmp"
       changed_when: false
 
-    - name: Adjust kubeconfig context and cluster name to {{ cluster_name }}
-      vars:
-        cluster_name: '{{ inventory_hostname | regex_replace("[^a-zA-Z0-9-]", "-") }}'
+    - name: Adjust kubeconfig context and cluster name to {{ _k3s_cfg_context_name }}
       replace:
         path: "{{ _k3s_conf_dir }}/k3s.yaml.tmp"
         regexp: "\\b(current-context|cluster|user|name): default$"
-        replace: "\\1: {{ cluster_name }}"
+        replace: "\\1: {{ _k3s_cfg_context_name }}"
       changed_when: false
 
     - name: Adjust kubeconfig endpoint URL to {{ endpoint_url }}
