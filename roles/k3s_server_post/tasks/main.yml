@@ -1,9 +1,18 @@
 ---
-- name: Deploy metallb pool
-  include_tasks: metallb.yml
-  tags: metallb
+- name: Deploy additional k3s manifests
+  when: k3s.extras and inventory_hostname == groups["k3s_server"][0]
+  vars:
+    _k3s_manifests_dir: /tmp/k3s/manifests
+  block:
+    - name: Create manifests directory
+      file:
+        path: '{{ _k3s_manifests_dir }}'
+        state: directory
 
-- name: Remove tmp directory used for manifests
-  file:
-    path: /tmp/k3s
-    state: absent
+    - name: Deploy MetalLB manifests
+      include_tasks: deploy_metallb.yml
+  always:
+    - name: Remove manifests directory
+      file:
+        path: '{{ _k3s_manifests_dir }}'
+        state: absent
