@@ -1,20 +1,36 @@
 ---
+- name: Install k3s configuration
+  vars:
+    _k3s_units_env:
+      "k3s-agent.service":
+        "K3S_EXEC": '{{ _k3s_args_agent | split() | join(" ") }}'
+  block:
+    - name: Install environment files
+      copy:
+        content: |-
+          # Mandatory configuration
+          {% for k, v in _k3s_units_env[item].items() %}
+          {{ k }}={{ v }}
+          {% endfor %}
 
-- name: Deploy K3s http_proxy conf
-  include_tasks: http_proxy.yml
-  when: proxy_env is defined
+          {% if proxy.configure %}
+          # Proxy configuration
+          {% for k, v in proxy.env.items() %}
+          {{ k }}={{ v }}
+          {% endfor %}
+          {% endif %}
+        dest: "{{ _systemd_dir }}/{{ item }}.env"
+        mode: '0600'
+      loop: '{{ _k3s_units_env.keys() }}'
 
-- name: Copy K3s service file
-  template:
-    src: "k3s.service.j2"
-    dest: "{{ systemd_dir }}/k3s-node.service"
-    owner: root
-    group: root
-    mode: 0755
+    - debug:
+        msg: '{{ _k3s_units_env }}'
 
-- name: Enable and check K3s service
+- name: Enable and run k3s-agent.service
   systemd:
-    name: k3s-node
+    name: k3s-agent.service
     daemon_reload: true
-    state: restarted
     enabled: true
+    state: restarted
+
+# TODO: wait for k3s agent nodes, somehow (probably using delegation to one of the masters)
