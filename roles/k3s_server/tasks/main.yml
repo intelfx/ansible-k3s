@@ -244,6 +244,7 @@
       "which",
       "k3s",
     ]
+  changed_when: false
   register: this
 
 - name: Create {{ item }} symlink
