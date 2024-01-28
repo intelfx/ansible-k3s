@@ -46,8 +46,9 @@
     - role: k3s_agent
 
 - name: Configure k3s cluster
-  hosts: master
-  environment: "{{ proxy_env | default({}) }}"
+  hosts: k3s_server
+  environment: '{{ proxy.env if proxy.configure else {} }}'
+  handlers:
+    - import_tasks: handlers/main.yml
   roles:
     - role: k3s_server_post
-      become: true
