@@ -58,6 +58,13 @@ options:
         default: no
         aliases: [ daemon-reexec ]
         version_added: "2.8"
+    reset_failed:
+        description:
+            - Run reset-failed after performing any changes to reset the failure state of a unit.
+            - When set to V(true), runs reset-failed even if the module does not start or stop anything.
+        type: bool
+        default: no
+        aliases: [ reset-failed ]
     scope:
         description:
             - Run systemctl within a given service manager scope, either as the default system scope V(system),
@@ -348,6 +355,7 @@ def main():
             masked=dict(type='bool'),
             daemon_reload=dict(type='bool', default=False, aliases=['daemon-reload']),
             daemon_reexec=dict(type='bool', default=False, aliases=['daemon-reexec']),
+            reset_failed=dict(type='bool', default=False, aliases=['reset-failed']),
             scope=dict(type='str', default='system', choices=['system', 'user', 'global']),
             no_block=dict(type='bool', default=False),
         ),
@@ -571,6 +579,24 @@ def main():
             else:
                 # this should not happen?
                 module.fail_json(msg="Service is in unknown state", status=result['status'])
+
+        # Reset-failed if requested
+        if module.params['reset_failed']:
+            # What is current service state?
+            if 'ActiveState' in result['status']:
+                if result['status']['ActiveState'] == 'failed':
+                    result['changed'] = True
+                    if not module.check_mode:
+                        (rc, out, err) = module.run_command("%s reset-failed %s" % (systemctl, unit))
+                        if rc != 0:
+                            module.warn('Unable to reset service %s: %s' % (unit, err))
+
+            elif is_chroot(module) or os.environ.get('SYSTEMD_OFFLINE') == '1':
+                module.warn("Target is a chroot or systemd is offline. This can lead to false positives or prevent the init system tools from working.")
+            else:
+                # this should not happen?
+                module.fail_json(msg="Service is in unknown state", status=result['status'])
+
 
     module.exit_json(**result)
 
