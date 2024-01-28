@@ -1,4 +1,9 @@
 ---
+- name: Gather facts
+  hosts: k3s
+  tags:
+    - always
+
 - name: Prepare Proxmox cluster
   hosts: proxmox
   environment: '{{ proxy.env if proxy.configure else {} }}'
