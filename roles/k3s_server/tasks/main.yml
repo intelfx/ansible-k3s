@@ -192,21 +192,30 @@
     - debug:
         msg: '{{ _k3s_init_token }}'
 
+    - name: Copy kubeconfig
+      copy:
+        remote_src: true
+        src: "{{ _k3s_conf_dir }}/k3s.yaml"
+        dest: "{{ _k3s_conf_dir }}/k3s.yaml.tmp"
+      changed_when: false
+
     - name: Adjust kubeconfig context and cluster name to {{ cluster_name }}
       vars:
         cluster_name: '{{ inventory_hostname | regex_replace("[^a-zA-Z0-9-]", "-") }}'
       replace:
-        path: "{{ _k3s_conf_dir }}/k3s.yaml"
+        path: "{{ _k3s_conf_dir }}/k3s.yaml.tmp"
         regexp: "\\b(current-context|cluster|user|name): default$"
         replace: "\\1: {{ cluster_name }}"
+      changed_when: false
 
     - name: Adjust kubeconfig endpoint URL to {{ endpoint_url }}
       vars:
         endpoint_url: "https://{{ _k3s_apiserver_name | ansible.utils.ipwrap }}:6443"
       replace:
-        path: "{{ _k3s_conf_dir }}/k3s.yaml"
+        path: "{{ _k3s_conf_dir }}/k3s.yaml.tmp"
         regexp: "\\b(server): [^\\n]+$"
         replace: "\\1: {{ endpoint_url }}"
+      changed_when: false
 
     - name: Create ~/.kube
       file:
@@ -216,7 +225,7 @@
     - name: Copy kubeconfig to ~/.kube
       copy:
         remote_src: true
-        src: "{{ _k3s_conf_dir }}/k3s.yaml"
+        src: "{{ _k3s_conf_dir }}/k3s.yaml.tmp"
         dest: "{{ ansible_facts.user_dir }}/.kube/config"
 
 - name: Download k3s configuration
@@ -233,7 +242,7 @@
       loop:
         - { src: "{{ _k3s_state_dir }}/server/node-token" }
         - { src: "{{ _k3s_state_dir }}/server/agent-token" }
-        - { src: "{{ _k3s_conf_dir }}/k3s.yaml", dest: kubeconfig }
+        - { src: "{{ _k3s_conf_dir }}/k3s.yaml.tmp", dest: kubeconfig }
 
 - name: Find k3s tool
   command:
