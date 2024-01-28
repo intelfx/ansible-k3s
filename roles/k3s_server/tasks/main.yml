@@ -168,21 +168,23 @@
   when: not ansible_check_mode
   # and inventory_hostname == groups["k3s_server"][0]
   block:
-    - name: Read node-token
+    # ffs, ansible, give us blocks in loops
+    - name: Read tokens
       slurp:
-        path: "{{ _k3s_state_dir }}/server/node-token"
-      register: nt
+        path: "{{ _k3s_state_dir }}/server/{{ item.src }}"
+      loop:
+        - { src: node-token, fact: _k3s_node_token }
+        - { src: agent-token, fact: _k3s_agent_token }
+      register: tokens
 
-    - name: Read agent-token
-      slurp:
-        path: "{{ _k3s_state_dir }}/server/agent-token"
-      register: at
-
-    - name: Store node-token and agent-token
+    - name: Store tokens
       set_fact:
-        _k3s_node_token: '{{ nt.content | b64decode | regex_replace("\n", "") }}'
-        _k3s_agent_token: '{{ at.content | b64decode | regex_replace("\n", "") }}'
+        '{{ item.item.fact }}': '{{ item.content | b64decode | trim }}'
         cacheable: true
+      loop: '{{ tokens.results }}'
+      loop_control:
+        label: '{{ item.item }}'
+
     - debug:
         msg: '{{ _k3s_node_token }}'
     - debug:
