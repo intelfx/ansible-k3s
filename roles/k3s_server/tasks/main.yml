@@ -109,7 +109,7 @@
 
   always:
     - name: Fetch final node status
-      ansible.builtin.command:
+      command:
         argv: [
           "k3s",
           "kubectl",
@@ -125,7 +125,7 @@
     - name: Store node status
       delegate_to: localhost
       become: false
-      ansible.builtin.copy:
+      copy:
         content: '{{ this.stdout }}'
         dest: "{{ _k3s_log_destination }}/k3s-init-nodes@{{ inventory_hostname }}.log"
 
@@ -136,7 +136,7 @@
         reset_failed: true
 
     - name: Fetch k3s-init.service logs
-      ansible.builtin.command:
+      command:
         argv: [
           "journalctl",
           "--all",
@@ -149,7 +149,7 @@
     - name: Store k3s-init.service logs
       delegate_to: localhost
       become: false
-      ansible.builtin.copy:
+      copy:
         content: '{{ this.stdout }}'
         dest: "{{ _k3s_log_destination }}/k3s-init-log@{{ inventory_hostname }}.log"
 
@@ -193,7 +193,7 @@
     - name: Adjust kubeconfig context and cluster name to {{ cluster_name }}
       vars:
         cluster_name: '{{ inventory_hostname | regex_replace("[^a-zA-Z0-9-]", "-") }}'
-      ansible.builtin.replace:
+      replace:
         path: "{{ _k3s_conf_dir }}/k3s.yaml"
         regexp: "\\b(current-context|cluster|user|name): default$"
         replace: "\\1: {{ cluster_name }}"
@@ -201,7 +201,7 @@
     - name: Adjust kubeconfig endpoint URL to {{ endpoint_url }}
       vars:
         endpoint_url: "https://{{ _k3s_apiserver_name | ansible.utils.ipwrap }}:6443"
-      ansible.builtin.replace:
+      replace:
         path: "{{ _k3s_conf_dir }}/k3s.yaml"
         regexp: "\\b(server): [^\\n]+$"
         replace: "\\1: {{ endpoint_url }}"
@@ -228,7 +228,7 @@
       vars:
         src: '{{ item.src }}'
         dest: '{{ _k3s_conf_destination }}/{{ item.dest | default(item.src | basename) }}@{{ inventory_hostname }}'
-      ansible.builtin.fetch:
+      fetch:
         src: "{{ src }}"
         dest: "{{ dest }}"
         flat: true
