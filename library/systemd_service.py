@@ -577,13 +577,14 @@ def main():
                         if rc != 0:
                             module.fail_json(msg="Unable to %s service %s: %s" % (action, unit, err))
 
-                if want_kill and result['status'].get('TasksCurrent', None) != 0:
+                if want_kill and result['status'].get('TasksCurrent', None) not in ('0', '[not set]'):
                     action = 'kill'
-                    result['changed'] = True
                     if not module.check_mode:
                         (rc, out, err) = module.run_command("%s %s '%s'" % (systemctl, action, unit))
-                        if rc != 0:
+                        if rc != 0 and 'not loaded' not in err:
                             module.fail_json(msg="Unable to %s service %s: %s" % (action, unit, err))
+                        elif rc == 0:
+                            result['changed'] = True
             # check for chroot
             elif is_chroot(module) or os.environ.get('SYSTEMD_OFFLINE') == '1':
                 module.warn("Target is a chroot or systemd is offline. This can lead to false positives or prevent the init system tools from working.")
