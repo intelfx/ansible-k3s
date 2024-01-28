@@ -87,9 +87,10 @@
         argv: [
           "systemd-run",
           "--unit=k3s-init.service",
-          "-pType=notify",
+          # FIXME: non-first masters may fail briefly until 1st master is up, so run them with Type=exec
+          '{{ "-pType=notify" if inventory_hostname == groups["k3s_server"][0] else "-pType=exec" }}',
           "-pEnvironmentFile={{ _systemd_dir }}/k3s-init.service.env",
-          "-pKillMode=mixed",
+          "-pKillMode=process",
           "-pDelegate=yes",
           "-pRestartSec=2",
           "-pRestart=on-failure",
