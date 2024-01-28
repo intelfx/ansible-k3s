@@ -1,0 +1,5 @@
+---
+- name: '{{ "Remove" if k3s.install.state == "absent" else "Install" }} k3s packages'
+  community.general.pacman:
+    name: '{{ k3s.install.packages }}'
+    state: '{{ k3s.install.state }}'

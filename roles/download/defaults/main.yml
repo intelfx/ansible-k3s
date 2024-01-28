@@ -1,0 +1,11 @@
+---
+_k3s_files:
+  x86_64:
+    bin: k3s
+    sha256: sha256sum-amd64.txt
+  aarch64:
+    bin: k3s-armhf
+    sha256: sha256sum-arm64.txt
+  armv7l:
+    bin: k3s-armhf
+    sha256: sha256sum-arm.txt
