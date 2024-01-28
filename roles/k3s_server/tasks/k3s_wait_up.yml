@@ -24,6 +24,8 @@
       failed_when: this.rc != 0
       delay: 5
       retries: 12
+    - debug:
+        msg: '{{ this.stdout }}'
 
     - name: Wait until all servers have joined
       command:
@@ -41,7 +43,5 @@
       failed_when: this.rc != 0 or (this.stdout_lines | length) != (groups["k3s_server"] | length)
       delay: 5
       retries: 12
-    - debug:
-        msg: '{{ this }}'
     - debug:
         msg: '{{ this.stdout_lines }}'
