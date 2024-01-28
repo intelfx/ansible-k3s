@@ -349,7 +349,7 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             name=dict(type='str', aliases=['service', 'unit']),
-            state=dict(type='str', choices=['reloaded', 'restarted', 'started', 'stopped']),
+            state=dict(type='str', choices=['reloaded', 'restarted', 'started', 'stopped', 'killed']),
             enabled=dict(type='bool'),
             force=dict(type='bool'),
             masked=dict(type='bool'),
@@ -551,6 +551,9 @@ def main():
             # default to desired state
             result['state'] = module.params['state']
 
+            if want_kill := (module.params['state'] == 'killed'):
+                module.params['state'] = 'stopped'
+
             # What is current service state?
             if 'ActiveState' in result['status']:
                 action = None
@@ -568,6 +571,14 @@ def main():
                     result['state'] = 'started'
 
                 if action:
+                    result['changed'] = True
+                    if not module.check_mode:
+                        (rc, out, err) = module.run_command("%s %s '%s'" % (systemctl, action, unit))
+                        if rc != 0:
+                            module.fail_json(msg="Unable to %s service %s: %s" % (action, unit, err))
+
+                if want_kill and result['status'].get('TasksCurrent', None) != 0:
+                    action = 'kill'
                     result['changed'] = True
                     if not module.check_mode:
                         (rc, out, err) = module.run_command("%s %s '%s'" % (systemctl, action, unit))
