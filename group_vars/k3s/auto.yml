@@ -7,7 +7,7 @@ _k3s_state_dir: /var/lib/rancher/k3s
 _k3s_log_destination: '{{ lookup("ansible.builtin.env", "PWD") }}'
 _k3s_conf_destination: '{{ lookup("ansible.builtin.env", "PWD") }}'
 
-_k3s_token: '{{ k3s.token }}'
+_k3s_init_token: '{{ k3s.token }}'
 
 _k3s_int_iface: '{{ k3s.int_iface }}'
 _k3s_ext_iface: '{{ k3s.ext_iface | default(k3s.int_iface) }}'
@@ -61,6 +61,7 @@ _k3s_args_agent: |-
   {{ _k3s_args_all }}
   {{ k3s.extra_args_agent }}
 
+# TODO: use full (secure) token for 2nd and later masters
 _k3s_args_server_init: |-
   {% if groups["k3s_server"] | length > 1 %}
   {% if inventory_hostname == groups["k3s_server"][0] %}
@@ -68,6 +69,6 @@ _k3s_args_server_init: |-
   {% else %}
   --server https://{{ hostvars[groups["k3s_server"][0]]._k3s_int_node_ip | ansible.utils.ipwrap }}:6443
   {% endif %}
-  --token {{ _k3s_token }}
+  --token {{ _k3s_init_token }}
   {% endif %}
   {{ _k3s_args_server }}

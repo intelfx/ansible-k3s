@@ -189,7 +189,7 @@
     - debug:
         msg: '{{ _k3s_agent_token }}'
     - debug:
-        msg: '{{ _k3s_token }}'
+        msg: '{{ _k3s_init_token }}'
 
     - name: Adjust kubeconfig context and cluster name to {{ cluster_name }}
       vars:
