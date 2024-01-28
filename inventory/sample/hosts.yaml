@@ -1,0 +1,14 @@
+k3s:
+  children:
+    k3s_server:
+      hosts:
+        k3s-0.local:
+    k3s_agent:
+      hosts:
+        k3s-1.local:
+        k3s-2.local:
+
+# only required if proxmox_lxc.configure: true
+# must contain all proxmox instances that have a master or worker node
+proxmox:
+  hosts: {}

@@ -1,0 +1,73 @@
+---
+_systemd_dir: /etc/systemd/system
+_systemd_transient_dir: /run/systemd/transient
+_k3s_conf_dir: /etc/rancher/k3s
+_k3s_state_dir: /var/lib/rancher/k3s
+
+_k3s_log_destination: '{{ lookup("ansible.builtin.env", "PWD") }}'
+_k3s_conf_destination: '{{ lookup("ansible.builtin.env", "PWD") }}'
+
+_k3s_token: '{{ k3s.token }}'
+
+_k3s_int_iface: '{{ k3s.int_iface }}'
+_k3s_ext_iface: '{{ k3s.ext_iface | default(k3s.int_iface) }}'
+
+# The IP on which the node is reachable in the cluster
+_k3s_int_node_ip: '{{ k3s.int_node_ip | default(ansible_facts[_k3s_int_iface]["ipv4"]["address"]) }}'
+_k3s_int_node_name: '{{ k3s.int_node_name | default(query("community.general.dig", _k3s_int_node_ip, qtype="PTR", real_empty=true)[0]) | default(inventory_hostname) }}'
+
+# The IP on which the node is reachable from the outside world
+_k3s_ext_node_ip: '{{ k3s.ext_node_ip | default(ansible_facts[_k3s_ext_iface]["ipv4"]["address"]) }}'
+_k3s_ext_node_name: '{{ k3s.ext_node_name | default(query("community.general.dig", _k3s_ext_node_ip, qtype="PTR", real_empty=true)[0]) | default(inventory_hostname) }}'
+
+# The assigned virtual IP for the apiserver(s)
+_vip_apiserver_ip: '{{ vip.apiserver_ip | default(omit) }}'
+_vip_apiserver_name: '{{ vip.apiserver_name | default(query("community.general.dig", vip.apiserver_ip, qtype="PTR", real_empty=true)[0]) | default(omit) }}'
+
+# The external apiserver IP (either external IP of the first master, or the assigned VIP)
+_k3s_apiserver_ip: '{{ _vip_apiserver_ip if k3s.extras else hostvars[groups["k3s_server"][0]]["_k3s_ext_node_ip"] }}'
+_k3s_apiserver_name: '{{ _vip_apiserver_name if k3s.extras else hostvars[groups["k3s_server"][0]]["_k3s_ext_node_name"] }}'
+
+# Disable the taint manually by setting: k3s_master_taint = false
+_k3s_master_taint: '{{ true if groups["k3s_agent"] | default([]) | length >= 1 else false }}'
+
+# Set on the first master
+_k3s_is_first: '{{ inventory_hostname == groups["k3s_server"][0] }}'
+
+_k3s_args_all: |-
+  --flannel-iface {{ _k3s_int_iface }}
+  {% if false %}
+  --node-ip {{ _k3s_int_node_ip }}
+  --node-external-ip {{ _k3s_ext_node_ip }}
+  {% endif %}
+  {{ k3s.extra_args_all }}
+
+# change these to your liking, the only required are: --disable servicelb, --tls-san {{ apiserver_endpoint }}
+_k3s_args_server: |-
+  {{ _k3s_args_all }}
+  {% if _k3s_master_taint %}
+  --node-taint node-role.kubernetes.io/master=true:NoSchedule
+  {% endif %}
+  {% for ep in [ _k3s_apiserver_ip, _k3s_apiserver_name ] | unique | list %}
+  --tls-san {{ ep }}
+  {% endfor %}
+  {% if k3s.extras %}
+  --disable servicelb
+  --disable traefik
+  {% endif %}
+  {{ k3s.extra_args_server }}
+
+_k3s_args_agent: |-
+  {{ _k3s_args_all }}
+  {{ k3s.extra_args_agent }}
+
+_k3s_args_server_init: |-
+  {% if groups["k3s_server"] | length > 1 %}
+  {% if inventory_hostname == groups["k3s_server"][0] %}
+  --cluster-init
+  {% else %}
+  --server https://{{ hostvars[groups["k3s_server"][0]]._k3s_int_node_ip | ansible.utils.ipwrap }}:6443
+  {% endif %}
+  --token {{ _k3s_token }}
+  {% endif %}
+  {{ _k3s_args_server }}
