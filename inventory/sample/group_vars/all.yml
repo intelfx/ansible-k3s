@@ -2,9 +2,6 @@
 ansible_user: root
 become: false
 
-systemd_dir: /etc/systemd/system
-systemd_transient_dir: /run/systemd/transient
-
 k3s:
   download:
     state: disabled
