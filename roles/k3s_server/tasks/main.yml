@@ -206,9 +206,9 @@
         replace: "\\1: {{ _k3s_cfg_context_name }}"
       changed_when: false
 
-    - name: Adjust kubeconfig endpoint URL to {{ endpoint_url }}
+    - name: Adjust kubeconfig endpoint URL to local node name
       vars:
-        endpoint_url: "https://{{ _k3s_apiserver_name | ansible.utils.ipwrap }}:6443"
+        endpoint_url: "https://{{ _k3s_ext_node_name | ansible.utils.ipwrap }}:6443"
       replace:
         path: "{{ _k3s_conf_dir }}/k3s.yaml.tmp"
         regexp: "\\b(server): [^\\n]+$"
