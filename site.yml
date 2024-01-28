@@ -25,11 +25,12 @@
       when: custom_registries.configure
 
 - name: Setup k3s servers
-  hosts: master
-  environment: "{{ proxy_env | default({}) }}"
+  hosts: k3s_server
+  environment: '{{ proxy.env if proxy.configure else {} }}'
+  handlers:
+    - import_tasks: handlers/main.yml
   roles:
     - role: k3s_server
-      become: true
 
 - name: Setup k3s agents
   hosts: node
