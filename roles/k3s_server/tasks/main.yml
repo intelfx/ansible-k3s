@@ -118,14 +118,7 @@
         ]
       changed_when: false
       failed_when: false
-      register: this
-
-    - name: Store node status
-      delegate_to: localhost
-      become: false
-      copy:
-        content: '{{ this.stdout }}'
-        dest: "{{ _k3s_log_destination }}/k3s-init-nodes@{{ inventory_hostname }}.log"
+      register: nodes
 
     - name: Terminate k3s-init.service
       systemd:
@@ -142,13 +135,29 @@
           '--after-cursor={{ (_k3s_init_cursor.stdout | from_json)["__CURSOR"] }}',
         ]
       changed_when: false
-      register: this
+      register: logs
+
+    - name: Create local directories
+      delegate_to: localhost
+      become: false
+      file:
+        path: '{{ item }}'
+        state: directory
+      loop:
+        - '{{ _k3s_log_destination }}'
+
+    - name: Store node status
+      delegate_to: localhost
+      become: false
+      copy:
+        content: '{{ nodes.stdout }}'
+        dest: "{{ _k3s_log_destination }}/k3s-init-nodes@{{ inventory_hostname }}.log"
 
     - name: Store k3s-init.service logs
       delegate_to: localhost
       become: false
       copy:
-        content: '{{ this.stdout }}'
+        content: '{{ logs.stdout }}'
         dest: "{{ _k3s_log_destination }}/k3s-init-log@{{ inventory_hostname }}.log"
 
 - name: Enable and run k3s.service
@@ -242,6 +251,15 @@
         regexp: "\\b(server): [^\\n]+$"
         replace: "\\1: {{ endpoint_url }}"
       changed_when: false
+
+    - name: Create local directories
+      delegate_to: localhost
+      become: false
+      file:
+        path: '{{ item }}'
+        state: directory
+      loop:
+        - '{{ _k3s_conf_destination }}'
 
     - name: Fetch k3s configuration
       vars:
