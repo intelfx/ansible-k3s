@@ -11,8 +11,8 @@ _k3s_cfg_context_name: '{{ k3s.context_name }}'
 
 _k3s_init_token: '{{ k3s.token }}'
 # These two are set as facts as part of the k3s_server role
-_k3s_node_token: None
-_k3s_agent_token: None
+_k3s_node_token: '{{ undef() }}'
+_k3s_agent_token: '{{ undef() }}'
 
 _k3s_int_iface: '{{ k3s.int_iface }}'
 _k3s_ext_iface: '{{ k3s.ext_iface | default(k3s.int_iface) }}'
