@@ -15,15 +15,19 @@ _k3s_node_token: '{{ undef() }}'
 _k3s_agent_token: '{{ undef() }}'
 
 _k3s_int_iface: '{{ k3s.int_iface }}'
-_k3s_ext_iface: '{{ k3s.ext_iface | default(k3s.int_iface) }}'
 
 # The IP on which the node is reachable in the cluster
 _k3s_int_node_ip: '{{ k3s.int_node_ip | default(ansible_facts[_k3s_int_iface]["ipv4"]["address"]) }}'
 _k3s_int_node_name: '{{ k3s.int_node_name | default(query("community.general.dig", _k3s_int_node_ip, qtype="PTR", real_empty=true)[0]) | default(inventory_hostname) }}'
 
+# TODO: defaulting these to the internal IP is semantically incorrect,
+#       but due to the way Ansible variables work it is more convenient.
+#       Find a way to do substitutions with potentially-undefined variables,
+#       then remove the defaults here and ad-hoc "if ext != int" in args below.
+
 # The IP on which the node is reachable from the outside world
-_k3s_ext_node_ip: '{{ k3s.ext_node_ip | default(ansible_facts[_k3s_ext_iface]["ipv4"]["address"]) }}'
-_k3s_ext_node_name: '{{ k3s.ext_node_name | default(query("community.general.dig", _k3s_ext_node_ip, qtype="PTR", real_empty=true)[0]) | default(inventory_hostname) }}'
+_k3s_ext_node_ip: '{{ k3s.ext_node_ip | default(_k3s_int_node_ip) }}'
+_k3s_ext_node_name: '{{ k3s.ext_node_name | default(query("community.general.dig", _k3s_ext_node_ip, qtype="PTR", real_empty=true)[0]) | default(_k3s_int_node_name) }}'
 
 # The assigned virtual IP for the apiserver(s)
 _vip_apiserver_ip: '{{ vip.apiserver_ip | default(omit) }}'
@@ -42,10 +46,15 @@ _k3s_is_first: '{{ inventory_hostname == groups["k3s_server"][0] }}'
 # updated in the handler
 _k3s_reinit: false
 
+# --node-external-ip is for situations where an externally reachable IP is NATed to the node, see
+# https://github.com/k3s-io/k3s/issues/6032#issuecomment-1230584717
+# Also, node IPs should not be changed after the fact. If you need to change them, you should use
+# --cluster-reset to reset the cluster membership to just the current node with the current IP
+# https://github.com/k3s-io/k3s/discussions/6029#discussioncomment-3459740
 _k3s_args_all: |-
   --flannel-iface {{ _k3s_int_iface }}
-  {% if false %}
   --node-ip {{ _k3s_int_node_ip }}
+  {% if _k3s_ext_node_ip != _k3s_int_node_ip %}
   --node-external-ip {{ _k3s_ext_node_ip }}
   {% endif %}
   {{ k3s.extra_args_all }}
@@ -68,7 +77,7 @@ _k3s_args_server: |-
 # we are not passing the apiserver (V)IP here -- k3s load-balances agent->server connections internally
 _k3s_args_agent: |-
   {{ _k3s_args_all }}
-  --server https://{{ hostvars[groups["k3s_server"][0]]._k3s_int_node_ip | ansible.utils.ipwrap }}:6443
+  --server https://{{ hostvars[groups["k3s_server"][0]]._k3s_ext_node_ip | ansible.utils.ipwrap }}:6443
   --token {{ hostvars[groups["k3s_server"][0]].ansible_facts._k3s_agent_token }}
   {{ k3s.extra_args_agent }}
 
@@ -78,7 +87,7 @@ _k3s_args_server_init: |-
   {% if inventory_hostname == groups["k3s_server"][0] %}
   --cluster-init
   {% else %}
-  --server https://{{ hostvars[groups["k3s_server"][0]]._k3s_int_node_ip | ansible.utils.ipwrap }}:6443
+  --server https://{{ hostvars[groups["k3s_server"][0]]._k3s_ext_node_ip | ansible.utils.ipwrap }}:6443
   {% endif %}
   --token {{ _k3s_init_token }}
   {% endif %}

@@ -19,8 +19,6 @@ k3s:
 
   # interface which will be used for flannel
   int_iface: "enp1s0"
-  # interface that will be used to access the cluster
-  ext_iface: "enp1s0"
 
   # whether to install metallb and kube-vip
   extras: false
