@@ -26,6 +26,9 @@
       loop: '{{ _k3s_units_env.keys() }}'
       notify: k3s_reinit
 
+    - debug:
+        msg: '{{ _k3s_units_env }}'
+
 - name: Install k3s manifests
   when: k3s.extras and inventory_hostname == groups["k3s_server"][0]
   vars:
