@@ -105,6 +105,11 @@
       when: not ansible_check_mode
       include_tasks: k3s_wait_up.yml
 
+    - name: 'HACK: wait for 60s'
+      when: not ansible_check_mode
+      wait_for:
+        timeout: 60
+
   always:
     - name: Fetch final node status
       command:
