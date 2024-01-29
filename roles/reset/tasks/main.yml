@@ -23,7 +23,7 @@
         shopt -s nullglob
 
         findmnt --list --noheading -o TARGET | \
-        { grep -E '^(/run/k3s/|/run/netns/cni-|/var/lib/kubelet/|/var/lib/rancher/)' || true; } \
+        { grep -E '^(/run/k3s/|/run/netns/cni-|/var/lib/kubelet/|/var/lib/rancher/|/var/lib/cni/)' || true; } \
         | sort \
         | xargs -r -n1 umount -v
   register: _k3s_reset_unmount
@@ -39,7 +39,7 @@
         set -eo pipefail
         shopt -s nullglob
 
-        rm -vrf /run/k3s/* /run/netns/cni-* /var/lib/kubelet/*
+        rm -vrf /run/k3s/* /run/netns/cni-* /var/lib/kubelet/* /var/lib/cni/*
         rm -vrf /etc/systemd/system/k3s*.service.env
         rm -vrf /etc/rancher/k3s/*
         rm -vrf $HOME/.kube
