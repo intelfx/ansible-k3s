@@ -36,6 +36,11 @@ k3s:
 
   extra_args_agent: >-
 
+# These arguments are supposed to be overridable per-node
+# (ansible can't merge dictionaries)
+k3s_node_extra_args: >-
+k3s_node_extra_args_init: >-
+
 vip:
   # image tag for kube-vip
   version: "v0.5.12"

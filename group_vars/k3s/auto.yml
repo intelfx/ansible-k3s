@@ -73,6 +73,7 @@ _k3s_args_server: |-
   --disable traefik
   {% endif %}
   {{ k3s.extra_args_server }}
+  {{ k3s_node_extra_args }}
 
 # we are not passing the apiserver (V)IP here -- k3s load-balances agent->server connections internally
 _k3s_args_agent: |-
@@ -80,6 +81,7 @@ _k3s_args_agent: |-
   --server https://{{ hostvars[groups["k3s_server"][0]]._k3s_ext_node_ip | ansible.utils.ipwrap }}:6443
   --token {{ hostvars[groups["k3s_server"][0]].ansible_facts._k3s_agent_token }}
   {{ k3s.extra_args_agent }}
+  {{ k3s_node_extra_args }}
 
 # TODO: use full (secure) token for 2nd and later masters
 _k3s_args_server_init: |-
@@ -91,4 +93,5 @@ _k3s_args_server_init: |-
   {% endif %}
   --token {{ _k3s_init_token }}
   {% endif %}
+  {{ k3s_node_extra_args_init }}
   {{ _k3s_args_server }}
