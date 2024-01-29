@@ -39,6 +39,9 @@ _k3s_master_taint: '{{ k3s.master_taint | default(true if groups["k3s_agent"] | 
 # Set on the first master
 _k3s_is_first: '{{ inventory_hostname == groups["k3s_server"][0] }}'
 
+# updated in the handler
+_k3s_reinit: false
+
 _k3s_args_all: |-
   --flannel-iface {{ _k3s_int_iface }}
   {% if false %}
