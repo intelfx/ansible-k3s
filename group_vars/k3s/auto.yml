@@ -34,7 +34,7 @@ _k3s_apiserver_ip: '{{ _vip_apiserver_ip if k3s.extras else hostvars[groups["k3s
 _k3s_apiserver_name: '{{ _vip_apiserver_name if k3s.extras else hostvars[groups["k3s_server"][0]]["_k3s_ext_node_name"] }}'
 
 # Disable the taint manually by setting: k3s_master_taint = false
-_k3s_master_taint: '{{ true if groups["k3s_agent"] | default([]) | length >= 1 else false }}'
+_k3s_master_taint: '{{ k3s.master_taint | default(true if groups["k3s_agent"] | default([]) | length >= 1 else false) }}'
 
 # Set on the first master
 _k3s_is_first: '{{ inventory_hostname == groups["k3s_server"][0] }}'

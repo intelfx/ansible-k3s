@@ -25,6 +25,9 @@ k3s:
   # whether to install metallb and kube-vip
   extras: false
 
+  # whether to apply a taint to all server nodes (prevent scheduling of workload pods)
+  master_taint: false
+
   # these arguments are recommended for servers as well as agents:
   # change these to your liking, the only required are: --disable servicelb, --tls-san {{ apiserver_endpoint }}
   extra_args_all: >-
