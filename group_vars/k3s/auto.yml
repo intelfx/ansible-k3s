@@ -46,6 +46,9 @@ _k3s_is_first: '{{ inventory_hostname == groups["k3s_server"][0] }}'
 # updated in the handler
 _k3s_reinit: false
 
+# set from outside
+_k3s_force_reinit: '{{ k3s_node_force_reinit | default(k3s.force_reinit) | default(false) }}'
+
 # --node-external-ip is for situations where an externally reachable IP is NATed to the node, see
 # https://github.com/k3s-io/k3s/issues/6032#issuecomment-1230584717
 # Also, node IPs should not be changed after the fact. If you need to change them, you should use

@@ -56,7 +56,7 @@
   register: _k3s_agent_token
 
 - name: Initialize k3s
-  when: not (_k3s_node_token.stat.exists and _k3s_agent_token.stat.exists) or _k3s_reinit
+  when: not (_k3s_node_token.stat.exists and _k3s_agent_token.stat.exists) or _k3s_reinit or _k3s_force_reinit
   block:
     - name: Stop and reset k3s units
       systemd_service:

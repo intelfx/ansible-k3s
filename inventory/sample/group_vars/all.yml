@@ -26,6 +26,9 @@ k3s:
   # whether to apply a taint to all server nodes (prevent scheduling of workload pods)
   master_taint: false
 
+  # whether to forcibly run k3s-init.service
+  force_reinit: false
+
   # these arguments are recommended for servers as well as agents:
   # change these to your liking, the only required are: --disable servicelb, --tls-san {{ apiserver_endpoint }}
   extra_args_all: >-
@@ -38,6 +41,7 @@ k3s:
 
 # These arguments are supposed to be overridable per-node
 # (ansible can't merge dictionaries)
+k3s_node_force_reinit: false
 k3s_node_extra_args: >-
 k3s_node_extra_args_init: >-
 
