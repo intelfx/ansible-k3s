@@ -3,3 +3,6 @@
 
 .sshcontrol/
 .facts/
+
+_out/
+_log/
