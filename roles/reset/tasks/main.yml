@@ -39,11 +39,14 @@
         set -eo pipefail
         shopt -s nullglob
 
-        rm -vrf /run/k3s/* /run/netns/cni-* /var/lib/kubelet/* /etc/rancher/*
+        rm -vrf /run/k3s/* /run/netns/cni-* /var/lib/kubelet/*
+        rm -vrf /etc/systemd/system/k3s*.service.env
+        rm -vrf /etc/rancher/k3s/*
+        rm -vrf $HOME/.kube
 
-        [[ ! -e /var/lib/rancher ]] || {
-          find /var/lib/rancher -mindepth 1 -not -type d -not -path '/var/lib/rancher/k3s/agent/images/*' -print -delete
-          find /var/lib/rancher -mindepth 1 -type d -empty -print -delete
+        [[ ! -e /var/lib/rancher/k3s ]] || {
+          find /var/lib/rancher/k3s -mindepth 1 -not -type d -not -path '/var/lib/rancher/k3s/agent/images/*' -print -delete
+          find /var/lib/rancher/k3s -mindepth 1      -type d -empty -print -delete
         }
   register: _k3s_reset_rmrf
   changed_when: (_k3s_reset_rmrf.stderr_lines | length) > 0
