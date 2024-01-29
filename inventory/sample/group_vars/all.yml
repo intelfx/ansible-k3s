@@ -31,7 +31,11 @@ k3s:
   # these arguments are recommended for servers as well as agents:
   # change these to your liking, the only required are: --disable servicelb, --tls-san {{ apiserver_endpoint }}
   extra_args_all: >-
+
   extra_args_server: >-
+    --egress-selector-mode disabled
+    --default-local-storage-path /mnt/data/k3s
+
   extra_args_agent: >-
 
 vip:
