@@ -31,7 +31,7 @@
     name: k3s-agent.service
     daemon_reload: true
     enabled: true
-    state: restarted
+    state: '{{ "restarted" if _k3s_force_restart else "started" }}'
 
 # TODO: wait for k3s agent nodes, somehow (probably using delegation to one of the masters)
 

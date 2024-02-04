@@ -172,7 +172,7 @@
     name: k3s.service
     daemon_reload: true
     enabled: true
-    state: restarted
+    state: '{{ "restarted" if _k3s_force_restart else "started" }}'
 
 - name: Wait for k3s
   when: not ansible_check_mode
