@@ -45,21 +45,21 @@
     - name: Install MetalLB manifests
       include_tasks: install_metallb.yml
 
+- name: Check tokens
+  stat:
+    path: "{{ _k3s_state_dir }}/server/{{ item }}"
+  loop:
+    - node-token
+    - agent-token
+  register: this
+  changed_when: not this.stat.exists
+  notify: k3s_reinit
+
 - name: Commit reinit flag
   meta: flush_handlers
 
-- name: Check node-token
-  stat:
-    path: "{{ _k3s_state_dir }}/server/node-token"
-  register: _k3s_node_token
-
-- name: Check agent-token
-  stat:
-    path: "{{ _k3s_state_dir }}/server/agent-token"
-  register: _k3s_agent_token
-
 - name: Initialize k3s
-  when: not (_k3s_node_token.stat.exists and _k3s_agent_token.stat.exists) or _k3s_reinit or _k3s_force_reinit
+  when: _k3s_reinit or _k3s_force_reinit
   block:
     - name: Stop and reset k3s units
       systemd_service:
