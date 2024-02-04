@@ -29,7 +29,6 @@
 - name: Enable and run k3s-agent.service
   systemd:
     name: k3s-agent.service
-    daemon_reload: true
     enabled: true
     state: '{{ "restarted" if _k3s_force_restart else "started" }}'
 
