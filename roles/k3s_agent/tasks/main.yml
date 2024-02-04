@@ -34,3 +34,20 @@
     state: restarted
 
 # TODO: wait for k3s agent nodes, somehow (probably using delegation to one of the masters)
+
+- name: Find k3s tool
+  command:
+    argv: [
+      "which",
+      "k3s",
+    ]
+  changed_when: false
+  register: this
+
+- name: Create {{ item }} symlink
+  file:
+    src: '{{ this.stdout }}'
+    dest: "/usr/local/bin/{{ item }}"
+    state: link
+  loop:
+    - crictl
