@@ -27,3 +27,17 @@
     - { name: "net.ipv6.conf.all.accept_ra", value: "2" }
     - { name: "net.bridge.bridge-nf-call-iptables", value: "1" }
     - { name: "net.bridge.bridge-nf-call-ip6tables", value: "1" }
+
+- name: NFS
+  block:
+    - name: Install NFS packages
+      community.general.pacman:
+        name:
+          - nfs-utils
+        state: 'installed'
+
+    - name: Enable NFS client
+      systemd:
+        name: nfs-client.target
+        state: started
+        enabled: true
