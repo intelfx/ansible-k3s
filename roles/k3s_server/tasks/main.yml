@@ -99,7 +99,6 @@
           "server",
           "$K3S_EXEC",
         ]
-        creates: "{{ _systemd_transient_dir }}/k3s-init.service"
       register: this
     - debug:
         msg: '{{ this.stdout + this.stderr }}'
