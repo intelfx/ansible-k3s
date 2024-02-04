@@ -296,5 +296,6 @@
     dest: "/usr/local/bin/{{ item }}"
     state: link
   loop:
-    - crictl
     - kubectl
+    - crictl
+    - ctr
