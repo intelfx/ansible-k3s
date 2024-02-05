@@ -47,6 +47,9 @@
     - debug:
         msg: '{{ _k3s_units_env }}'
 
+- name: Commit reinit flag
+  meta: flush_handlers
+
 - name: Enable and run k3s-agent.service
   systemd:
     name: k3s-agent.service
