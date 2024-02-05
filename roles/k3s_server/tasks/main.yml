@@ -7,7 +7,7 @@
       "k3s.service":
         "K3S_EXEC": '{{ _k3s_args_server | split() | join(" ") }}'
     _k3s_configs_dir: /etc/rancher/k3s/config.yaml.d
-    _k3s_configs: '{{ _k3s_configs_all }}'
+    _k3s_configs: '{{ _k3s_configs_all | combine(_k3s_configs_server | default({})) }}'
   block:
     - name: Create configuration directory
       file:
