@@ -100,3 +100,5 @@ _k3s_args_server_init: |-
   {% endif %}
   {{ k3s_node_extra_args_init }}
   {{ _k3s_args_server }}
+
+_k3s_configs_all:

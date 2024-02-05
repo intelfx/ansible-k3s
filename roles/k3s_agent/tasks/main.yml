@@ -4,7 +4,28 @@
     _k3s_units_env:
       "k3s-agent.service":
         "K3S_EXEC": '{{ _k3s_args_agent | split() | join(" ") }}'
+    _k3s_configs_dir: /etc/rancher/k3s/config.yaml.d
+    _k3s_configs: '{{ _k3s_configs_all }}'
   block:
+    - name: Create configuration directory
+      file:
+        path: '{{ _k3s_configs_dir }}'
+        state: directory
+
+    - name: Install configuration files
+      copy:
+        content: '{{ item.value }}'
+        dest: "{{ _k3s_configs_dir }}/{{ item.key }}"
+        mode: "0600"
+      when: item.value is match("\S")
+      loop: '{{ _k3s_configs | dict2items }}'
+      loop_control:
+        label: '{{ item.key }}'
+      notify: k3s_restart
+
+    - debug:
+        msg: '{{ _k3s_configs }}'
+
     - name: Install environment files
       copy:
         content: |-
