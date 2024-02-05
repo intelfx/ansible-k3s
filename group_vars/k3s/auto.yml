@@ -102,3 +102,13 @@ _k3s_args_server_init: |-
   {{ _k3s_args_server }}
 
 _k3s_configs_all:
+  monitoring.yaml: |-
+    etcd-expose-metrics: true
+    kube-controller-manager-arg:
+      - "address=0.0.0.0"
+      - "bind-address=0.0.0.0"
+    kube-proxy-arg:
+      - "metrics-bind-address=0.0.0.0"
+    kube-scheduler-arg:
+      - "address=0.0.0.0"
+      - "bind-address=0.0.0.0"
