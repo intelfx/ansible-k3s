@@ -1,111 +1,115 @@
-# Automated build of HA k3s Cluster with `kube-vip` and MetalLB
+# Automated build of k3s cluster with optional HA control plane
 
-![Fully Automated K3S etcd High Availability Install](https://img.youtube.com/vi/CbkEWcUZ7zM/0.jpg)
+This playbook will build an HA Kubernetes cluster using `k3s`.
 
-This playbook will build an HA Kubernetes cluster with `k3s`, `kube-vip` and MetalLB via `ansible`.
+Optional HA support is based on `kube-vip` and MetalLB. It uses [kube-vip](https://kube-vip.io/)
+to create a load balancer for control plane, and [metal-lb](https://metallb.universe.tf/installation/)
+for its service `LoadBalancer`.
 
-This is based on the work from [this fork](https://github.com/212850a/k3s-ansible) which is based on the work from [k3s-io/k3s-ansible](https://github.com/k3s-io/k3s-ansible). It uses [kube-vip](https://kube-vip.io/) to create a load balancer for control plane, and [metal-lb](https://metallb.universe.tf/installation/) for its service `LoadBalancer`.
 
-If you want more context on how this works, see:
+## Node requirements
 
-📄 [Documentation](https://technotim.live/posts/k3s-etcd-ansible/) (including example commands)
+To install k3s as a distribution package:
 
-📺 [Watch the Video](https://www.youtube.com/watch?v=CbkEWcUZ7zM)
+- [x] Arch Linux
 
-## 📖 k3s Ansible Playbook
+To directly install k3s binary:
 
-Build a Kubernetes cluster using Ansible with k3s. The goal is easily install a HA Kubernetes cluster on machines running:
+- [x] Any systemd-based distribution, or specifically:
+  - [x] Debian (tested on version 11)
+  - [x] Ubuntu (tested on version 22.04)
+  - [x] Rocky (tested on version 9)
 
-- [x] Debian (tested on version 11)
-- [x] Ubuntu (tested on version 22.04)
-- [x] Rocky (tested on version 9)
+- [x] Any of these CPU architectures:
+  - [X] x64
+  - [X] aarch64
+  - [X] armv7l
 
-on processor architecture:
 
-- [X] x64
-- [X] arm64
-- [X] armhf
+## Controller requirements
 
-## ✅ System requirements
+This playbook uses custom plugins and advanced Ansible functionality.
+The following requirements were used during the development:
 
-- Control Node (the machine you are running `ansible` commands) must have Ansible 2.11+ If you need a quick primer on Ansible [you can check out my docs and setting up Ansible](https://technotim.live/posts/ansible-automation/).
+- [x] Ansible 2.16.3
+  - [x] `community.general` collection is required
+- [x] Python 3.11
+- [x] jq
+- [x] python-netaddr
 
-- You will also need to install collections that this playbook uses by running `ansible-galaxy collection install -r ./collections/requirements.yml` (important❗)
 
-- [`netaddr` package](https://pypi.org/project/netaddr/) must be available to Ansible. If you have installed Ansible via apt, this is already taken care of. If you have installed Ansible via `pip`, make sure to install `netaddr` into the respective virtual environment.
+## Usage
 
-- `server` and `agent` nodes should have passwordless SSH access, if not you can supply arguments to provide credentials `--ask-pass --ask-become-pass` to each command.
+### Preparation
 
-## 🚀 Getting Started
+1. Make a copy of `inventory/sample`:
 
-### 🍴 Preparation
+    ```bash
+    cp -R inventory/sample inventory/my
+    ```
 
-First create a new directory based on the `sample` directory within the `inventory` directory:
+2. Edit `inventory/my/hosts.yaml`
+    - Specify master nodes under `k3s_server` (these nodes will run k3s control plane)
+    - Specify worker nodes under `k3s_agent` (these nodes will only run the workload)
 
-```bash
-cp -R inventory/sample inventory/my-cluster
-```
+    ```yaml
+    k3s:
+      children:
+        k3s_server:
+          hosts:
+            node1.mydomain:
+        k3s_agent:
+          hosta:
+            node2.mydomain:
+            node3.mydomain:
+    ````
 
-Second, edit `inventory/my-cluster/hosts.ini` to match the system information gathered above
+    If multiple hosts are in the `k3s_server` group, the playbook will automatically
+    set up k3s in [HA mode with etcd](https://rancher.com/docs/k3s/latest/en/installation/ha-embedded/).
 
-For example:
+3. If needed, edit `inventory/my/group_vars/all.yml` to adjust deployment settings
+to match your environment.
 
-```ini
-[master]
-192.168.30.38
-192.168.30.39
-192.168.30.40
+4. Finally, edit `ansible.cfg` and update the inventory path to `inventory/my`
+or the directory you have just created.
 
-[node]
-192.168.30.41
-192.168.30.42
+### Provisioning
 
-[k3s_cluster:children]
-master
-node
-```
-
-If multiple hosts are in the master group, the playbook will automatically set up k3s in [HA mode with etcd](https://rancher.com/docs/k3s/latest/en/installation/ha-embedded/).
-
-Finally, copy `ansible.example.cfg` to `ansible.cfg` and adapt the inventory path to match the files that you just created.
-
-This requires at least k3s version `1.19.1` however the version is configurable by using the `k3s_version` variable.
-
-If needed, you can also edit `inventory/my-cluster/group_vars/all.yml` to match your environment.
-
-### ☸️ Create Cluster
-
-Start provisioning of the cluster using the following command:
-
-```bash
-ansible-playbook site.yml -i inventory/my-cluster/hosts.ini
-```
-
-After deployment control plane will be accessible via virtual ip-address which is defined in inventory/group_vars/all.yml as `apiserver_endpoint`
-
-### 🔥 Remove k3s cluster
+Create the cluster using the follosing command:
 
 ```bash
-ansible-playbook reset.yml -i inventory/my-cluster/hosts.ini
+ansible-playbook site.yml --tags never
 ```
 
->You should also reboot these nodes due to the VIP not being destroyed
+> [!IMPORTANT]
+> Roles that have the potential to break an existing deployment or cause
+> a service interruption are marked with `tags: never`.
 
-## ⚙️ Kube Config
+After deployment, the control plane will be accessible via the VIP (virtual IP
+address) specified as `vip.apiserver_ip` in the group_vars.
 
-To copy your `kube config` locally so that you can access your **Kubernetes** cluster run:
+### Deprovisioning
+
+Destroy the cluster using the following command:
 
 ```bash
-scp debian@master_ip:~/.kube/config ~/.kube/config
+ansible-playbook reset.yml
 ```
 
-### 🔨 Testing your cluster
+> [!IMPORTANT]  
+> You should also reboot the nodes, particularly if HA was used.
 
-See the commands [here](https://technotim.live/posts/k3s-etcd-ansible/#testing-your-cluster).
+### `kubeconfig`
 
-### Troubleshooting
+After provisioning, the kubeconfig with adjusted apiserver endpoint and
+context name will be available in the `_out` directory on the control node.
 
-Be sure to see [this post](https://github.com/techno-tim/k3s-ansible/discussions/20) on how to troubleshoot common problems
+
+## Meta
+
+> [!CAUTION]
+> This information is potentially obsolete as it was inherited from the playbook
+> this work was based on.
 
 ### Testing the playbook using molecule
 
@@ -116,34 +120,14 @@ You can find more information about it [here](molecule/README.md).
 
 ### Pre-commit Hooks
 
-This repo uses `pre-commit` and `pre-commit-hooks` to lint and fix common style and syntax errors.  Be sure to install python packages and then run `pre-commit install`.  For more information, see [pre-commit](https://pre-commit.com/)
+This repo uses `pre-commit` and `pre-commit-hooks` to lint and fix common style and syntax errors.
+Be sure to install python packages and then run `pre-commit install`.
+For more information, see [pre-commit](https://pre-commit.com/)
 
-## 🌌 Ansible Galaxy
 
-This collection can now be used in larger ansible projects.
+## Previous work
 
-Instructions:
-
-- create or modify a file `collections/requirements.yml` in your project
-
-```yml
-collections:
-  - name: ansible.utils
-  - name: community.general
-  - name: ansible.posix
-  - name: kubernetes.core
-  - name: https://github.com/techno-tim/k3s-ansible.git
-    type: git
-    version: master
-```
-
-- install via `ansible-galaxy collection install -r ./collections/requirements.yml`
-- every role is now available via the prefix `techno_tim.k3s_ansible.` e.g. `techno_tim.k3s_ansible.lxc`
-
-## Thanks 🤝
-
-This repo is really standing on the shoulders of giants. Thank you to all those who have contributed and thanks to these repos for code and ideas:
-
+- [techno-tim/k3s-ansible](https://github.com/techno-tim/k3s-ansible.git)
 - [k3s-io/k3s-ansible](https://github.com/k3s-io/k3s-ansible)
 - [geerlingguy/turing-pi-cluster](https://github.com/geerlingguy/turing-pi-cluster)
 - [212850a/k3s-ansible](https://github.com/212850a/k3s-ansible)
