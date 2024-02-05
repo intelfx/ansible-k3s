@@ -171,7 +171,7 @@
   systemd:
     name: k3s.service
     enabled: true
-    state: '{{ "restarted" if _k3s_force_restart else "started" }}'
+    state: '{{ "restarted" if _k3s_restart or _k3s_force_restart else "started" }}'
 
 - name: Wait for k3s
   when: not ansible_check_mode

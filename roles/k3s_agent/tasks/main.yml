@@ -30,7 +30,7 @@
   systemd:
     name: k3s-agent.service
     enabled: true
-    state: '{{ "restarted" if _k3s_force_restart else "started" }}'
+    state: '{{ "restarted" if _k3s_restart or _k3s_force_restart else "started" }}'
 
 # TODO: wait for k3s agent nodes, somehow (probably using delegation to one of the masters)
 

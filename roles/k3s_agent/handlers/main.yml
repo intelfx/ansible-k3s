@@ -1,0 +1,5 @@
+---
+- name: Mark k3s for restart
+  set_fact:
+    _k3s_restart: true
+  listen: k3s_restart

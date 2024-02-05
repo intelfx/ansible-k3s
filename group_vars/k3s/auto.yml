@@ -45,11 +45,10 @@ _k3s_is_first: '{{ inventory_hostname == groups["k3s_server"][0] }}'
 
 # updated in the handler
 _k3s_reinit: false
+_k3s_restart: false
 
 # set from outside
 _k3s_force_reinit: '{{ k3s_node_force_reinit | default(k3s.force_reinit) | default(false) }}'
-
-# set from outside
 _k3s_force_restart: '{{ k3s_node_force_restart | default(k3s.force_restart) | default(false) }}'
 
 # --node-external-ip is for situations where an externally reachable IP is NATed to the node, see
