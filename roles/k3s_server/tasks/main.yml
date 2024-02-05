@@ -14,6 +14,19 @@
         path: '{{ _k3s_configs_dir }}'
         state: directory
 
+    - name: List configuration files
+      find:
+        path: '{{ _k3s_configs_dir }}'
+      register: this
+
+    - name: Delete configuration files
+      file:
+        path: '{{ item }}'
+        state: absent
+      when: item | basename not in _k3s_configs.keys()
+      loop: '{{ this.files | map(attribute="path") }}'
+      notify: k3s_restart
+
     - name: Install configuration files
       copy:
         content: '{{ item.value }}'
