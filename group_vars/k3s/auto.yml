@@ -105,8 +105,8 @@ _k3s_configs_all:
   monitoring.yaml: |-
     etcd-expose-metrics: true
     kube-controller-manager-arg:
-      - "bind-address={{ _k3s_int_node_ip }}"
+      - "bind-address=0.0.0.0"
     kube-proxy-arg:
-      - "metrics-bind-address={{ _k3s_int_node_ip }}"
+      - "metrics-bind-address=0.0.0.0"
     kube-scheduler-arg:
-      - "bind-address={{ _k3s_int_node_ip }}"
+      - "bind-address=0.0.0.0"
