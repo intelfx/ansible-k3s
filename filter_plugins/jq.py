@@ -13,8 +13,8 @@ DOCUMENTATION = '''
   short_description: run `jq` over input
   description:
     - This filter lets you pass the input through an arbitrary `jq` script.
-    - Note that this filter does not accept `jq` scripts that produce multiple outputs.
-      Use `map(expr)` instead of `.[] | expr`.
+    - If the `jq` script may produce multiple outputs, you must use O(_collect=True).
+      Otherwise, multiple outputs are considered an error.
   positional: _input, expr
   options:
     _input:
@@ -28,6 +28,13 @@ DOCUMENTATION = '''
         - See U(https://jqlang.github.io/jq/) for documentation and examples.
       type: string
       required: true
+    _collect:
+      description:
+        - Whether to collect multiple outputs into an array.
+        - If omitted or False, multiple outputs are considered an error.
+      type: bool
+      required: false
+      default: false
     kwargs...:
       description:
         - Any keyword arguments will be JSON-encoded and passed to `jq` as named variables.
@@ -123,12 +130,30 @@ RETURN = '''
 '''
 
 import json
+import re
 import subprocess
 from ansible.errors import AnsibleFilterError
 from ansible.parsing.ajson import AnsibleJSONEncoder
+from typing import (
+    Any,
+    Generator,
+)
+
+
+def json_loads_multiple(data: str, **kwargs) -> Generator[Any, None, None]:
+    decoder = json.JSONDecoder(**kwargs)
+    pattern = re.compile(r'\S', re.ASCII)
+    pos, end = 0, len(data) + 1
+    while pos < end:
+        obj, pos = decoder.raw_decode(data, pos)
+        yield obj
+        m = pattern.search(data, pos)
+        pos = m.start() if m is not None else end
 
 
 def jq(data, expr, **kwargs):
+    collect = kwargs.pop('_collect', False)
+
     input_text = json.dumps(data, cls=AnsibleJSONEncoder, preprocess_unsafe=False)
     kwargs_text = {
         str(k): json.dumps(v, cls=AnsibleJSONEncoder, preprocess_unsafe=False)
@@ -169,7 +194,10 @@ def jq(data, expr, **kwargs):
     output_text = result.stdout
 
     try:
-        output = json.loads(output_text)
+        if collect:
+            output = list(json_loads_multiple(output_text))
+        else:
+            output = json.loads(output_text)
     except json.JSONDecodeError as e:
         raise AnsibleFilterError(f'jq output is not a valid JSON: {e}')
 
