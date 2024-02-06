@@ -13,6 +13,8 @@ DOCUMENTATION = '''
   short_description: run `jq` over input
   description:
     - This filter lets you pass the input through an arbitrary `jq` script.
+    - Note that this filter does not accept `jq` scripts that produce multiple outputs.
+      Use `map(expr)` instead of `.[] | expr`.
   positional: _input, expr
   options:
     _input:
@@ -117,7 +119,6 @@ RETURN = '''
   _value:
     description:
       - The output of `jq`, deserialized from JSON.
-      - If `jq` produces multiple outputs, the behavior is undefined.
     type: any
 '''
 
@@ -166,7 +167,12 @@ def jq(data, expr, **kwargs):
         raise AnsibleFilterError(f'jq produced non-empty stderr: {result.stderr}')
 
     output_text = result.stdout
-    output = json.loads(output_text)
+
+    try:
+        output = json.loads(output_text)
+    except json.JSONDecodeError as e:
+        raise AnsibleFilterError(f'jq output is not a valid JSON: {e}')
+
     return output
 
 
